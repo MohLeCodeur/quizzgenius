@@ -65,139 +65,194 @@ class _HomeScreenState extends State<HomeScreen> {
         allowedExtensions: ['pdf'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Extraction du texte en cours...'),
-                  ],
-                ),
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      // Validation de la taille du fichier (max 10 Mo) pour éviter le crash OOM
+      final int fileSizeInBytes = result.files.single.size;
+      final double fileSizeInMb = fileSizeInBytes / (1024 * 1024);
+      if (fileSizeInMb > 10.0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Ce fichier PDF est trop volumineux (${fileSizeInMb.toStringAsFixed(1)} Mo). Veuillez choisir un fichier de moins de 10 Mo.',
               ),
-            ),
-          ),
-        );
-
-        // Permettre le rendu du dialogue avant l'extraction synchrone
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        final file = File(result.files.single.path!);
-        final List<int> bytes = await file.readAsBytes();
-        
-        // Exécution en arrière-plan pour éviter de figer l'interface
-        final String text = await compute(_extractTextFromPdfBackground, bytes);
-        
-        if (mounted) Navigator.pop(context); // Fermer le dialogue
-
-        if (text.trim().isNotEmpty) {
-          setState(() {
-            _courseController.text = text;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Texte extrait du PDF avec succès !'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Le PDF semble vide ou ne contient pas de texte extractible.'),
               backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de la lecture du PDF : $e'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Extraction du texte en cours...'),
+                ],
+              ),
+            ),
+          ),
         ),
       );
+
+      // Permettre le rendu du dialogue avant l'extraction synchrone
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      String text = '';
+      bool success = false;
+      try {
+        final file = File(result.files.single.path!);
+        final List<int> bytes = await file.readAsBytes();
+        
+        // Exécution en arrière-plan pour éviter de figer l'interface
+        text = await compute(_extractTextFromPdfBackground, bytes);
+        success = true;
+      } finally {
+        if (mounted) {
+          Navigator.pop(context); // Fermer le dialogue de chargement dans tous les cas
+        }
+      }
+
+      if (success) {
+        if (text.trim().isNotEmpty) {
+          setState(() {
+            _courseController.text = text;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Texte extrait du PDF avec succès !'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Le PDF semble vide ou ne contient pas de texte extractible.'),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la lecture du PDF : $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickAndExtractImage(ImageSource source) async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source);
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 85,
+      );
 
-      if (image != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Analyse de l\'image en cours...'),
-                  ],
-                ),
+      if (image == null) {
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Analyse de l\'image en cours...'),
+                ],
               ),
             ),
           ),
-        );
+        ),
+      );
 
-        // Permettre le rendu du dialogue
-        await Future.delayed(const Duration(milliseconds: 100));
+      // Permettre le rendu du dialogue
+      await Future.delayed(const Duration(milliseconds: 100));
 
-        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      String text = '';
+      bool success = false;
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      try {
         final RecognizedText recognizedText = await textRecognizer.processImage(
           InputImage.fromFilePath(image.path)
         );
-
+        text = recognizedText.text;
+        success = true;
+      } finally {
         await textRecognizer.close();
+        if (mounted) {
+          Navigator.pop(context); // Fermer le dialogue de chargement dans tous les cas
+        }
+      }
 
-        final String text = recognizedText.text;
-
-        if (mounted) Navigator.pop(context); // Fermer le dialogue
-
+      if (success) {
         if (text.trim().isNotEmpty) {
           setState(() {
             _courseController.text = text;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Texte extrait de l\'image avec succès !'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Texte extrait de l\'image avec succès !'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Aucun texte lisible trouvé sur cette image.'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Aucun texte lisible trouvé sur cette image.'),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de la lecture de l\'image : $e'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la lecture de l\'image : $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

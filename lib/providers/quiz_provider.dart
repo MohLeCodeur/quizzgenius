@@ -16,7 +16,7 @@ String get _apiKey => dotenv.env['OPENROUTER_API_KEY'] ?? '';
 const String _apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
 /// Modèle IA à utiliser (rapide et performant)
-const String _model = 'google/gemini-2.0-flash-001';
+const String _model = 'google/gemini-3.1-flash-lite';
 
 /// États possibles du quiz
 enum QuizState {

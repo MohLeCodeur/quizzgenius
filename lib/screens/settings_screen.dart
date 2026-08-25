@@ -296,7 +296,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _InfoRow(label: 'Application', value: 'Quiz-Genius', isDark: isDark),
           _InfoRow(label: 'Version', value: '2.0.0', isDark: isDark),
-          _InfoRow(label: 'IA', value: 'Google Gemini 2.0 Flash', isDark: isDark),
+          _InfoRow(label: 'IA', value: 'Google Gemini 3.1 Flash-Lite', isDark: isDark),
           const SizedBox(height: 12),
         ],
       ),

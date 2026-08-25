@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application nécessite l'accès à votre appareil photo pour vous permettre de scanner vos cours ou documents imprimés et générer des quiz.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application nécessite l'accès à votre galerie d'images pour vous permettre d'importer des captures d'écran de vos cours et générer des quiz.</string>
 </dict>
 </plist>

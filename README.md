@@ -11,7 +11,7 @@
 
 ## ✨ Fonctionnalités Majeures
 
-*   🧠 **Génération par IA (OpenRouter & Gemini-2.0)** : Analyse de vos cours textuels pour créer des QCM pertinents et diversifiés avec explications détaillées pour chaque réponse.
+*   🧠 **Génération par IA (OpenRouter & Gemini-3.1)** : Analyse de vos cours textuels pour créer des QCM pertinents et diversifiés avec explications détaillées pour chaque réponse.
 *   📄 **Import PDF & Documents** : Importez directement des cours au format PDF pour générer des quiz sans copier-coller (propulsé par `syncfusion_flutter_pdf`).
 *   📷 **Numérisation de documents (OCR)** : Extrayez du texte directement depuis des photos ou captures d'écran à l'aide de l'OCR (`google_mlkit_text_recognition`).
 *   📊 **Tableau de Bord & Statistiques** : Visualisez votre progression globale et vos scores sous forme de graphiques élégants (grâce à `fl_chart`).
